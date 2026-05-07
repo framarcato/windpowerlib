@@ -135,81 +135,60 @@ def smooth_power_curve(
             + "options are 'turbulence_intensity', or "
             + "'Staffell_Pfenninger'".format(standard_deviation_method)
         )
-    # Initialize list for power curve values
-    smoothed_power_curve_values = []
-    # Append wind speeds to `power_curve_wind_speeds`
-    maximum_value = power_curve_wind_speeds.iloc[-1] + wind_speed_range
-    while power_curve_wind_speeds.values[-1] < maximum_value:
-        power_curve_wind_speeds = pd.concat(
-            [
-                power_curve_wind_speeds,
-                pd.Series(
-                    power_curve_wind_speeds.iloc[-1]
-                    + (
-                        power_curve_wind_speeds.iloc[5]
-                        - power_curve_wind_speeds.iloc[4]
-                    ),
-                    index=[power_curve_wind_speeds.index[-1] + 1],
-                )
-            ],
-            sort=True,
-        )
-        power_curve_values = pd.concat(
-            [
-                power_curve_values,
-                pd.Series(0.0, index=[power_curve_values.index[-1] + 1])
-            ],
-            sort=True,
-        )
-    for power_curve_wind_speed in power_curve_wind_speeds:
-        # Create array of wind speeds for the sum
-        wind_speeds_block = (
-            np.arange(
-                -wind_speed_range, wind_speed_range + block_width, block_width
-            )
-            + power_curve_wind_speed
-        )
-        # Get standard deviation for Gauss function
-        standard_deviation = (
-            (power_curve_wind_speed * normalized_standard_deviation + 0.6)
-            if standard_deviation_method == "Staffell_Pfenninger"
-            else power_curve_wind_speed * normalized_standard_deviation
-        )
-        # Get the smoothed value of the power output
-        if standard_deviation == 0.0:
-            # The gaussian distribution is not defined for a standard deviation
-            # of zero. Smoothed power curve value is set to zero.
-            smoothed_value = 0.0
-        else:
-            smoothed_value = sum(
-                block_width
-                * np.interp(
-                    wind_speed,
-                    power_curve_wind_speeds,
-                    power_curve_values,
-                    left=0,
-                    right=0,
-                )
-                * tools.gauss_distribution(
-                    power_curve_wind_speed - wind_speed,
-                    standard_deviation,
-                    mean_gauss,
-                )
-                for wind_speed in wind_speeds_block
-            )
-        # Add value to list - add zero if `smoothed_value` is nan as Gauss
-        # distribution for a standard deviation of zero.
-        smoothed_power_curve_values.append(smoothed_value)
-    # Create smoothed power curve data frame
-    smoothed_power_curve_df = pd.DataFrame(
-        data=[
-            list(power_curve_wind_speeds.values),
-            smoothed_power_curve_values,
-        ]
-    ).transpose()
-    # Rename columns of the data frame
-    smoothed_power_curve_df.columns = ["wind_speed", "value"]
-    return smoothed_power_curve_df
+
+    # Convert inputs to ndarray once (accept Series, list, or ndarray).
+    ws = np.asarray(
+        getattr(power_curve_wind_speeds, "values", power_curve_wind_speeds),
+        dtype=float,
+    )
+    pw = np.asarray(
+        getattr(power_curve_values, "values", power_curve_values),
+        dtype=float,
+    )
+
+    # Extend the wind-speed grid by `wind_speed_range` using the step inferred
+    # from indices 4 and 5 (preserves original semantics).
+    step = ws[5] - ws[4]
+    n_extra = int(np.ceil(wind_speed_range / step))
+    if n_extra > 0:
+        extra = ws[-1] + step * np.arange(1, n_extra + 1)
+        ws_full = np.concatenate([ws, extra])
+        pw_full = np.concatenate([pw, np.zeros(n_extra)])
+    else:
+        ws_full = ws
+        pw_full = pw
+
+    # Vectorized smoothing: for each output speed v_i build the Gaussian-
+    # weighted sum over a window `block` of relative offsets, then interpolate
+    # the original curve at v_i + block.
+    block = np.arange(
+        -wind_speed_range, wind_speed_range + block_width, block_width
+    )  # (B,)
+    ws_block = ws_full[:, None] + block[None, :]  # (N, B)
+
+    if standard_deviation_method == "Staffell_Pfenninger":
+        sigma = ws_full * normalized_standard_deviation + 0.6
+    else:
+        sigma = ws_full * normalized_standard_deviation
+    sigma_safe = np.where(sigma == 0.0, 1.0, sigma)
+
+    pw_block = np.interp(
+        ws_block.ravel(), ws_full, pw_full, left=0.0, right=0.0
+    ).reshape(ws_block.shape)
+
+    # gauss_distribution(power_curve_ws - ws_block, sigma, mean_gauss)
+    # = exp(-(block + mean_gauss)^2 / (2 sigma^2)) / (sigma * sqrt(2 pi))
+    gauss = (
+        1.0 / (sigma_safe[:, None] * np.sqrt(2.0 * np.pi))
+    ) * np.exp(
+        -((block[None, :] + mean_gauss) ** 2)
+        / (2.0 * sigma_safe[:, None] ** 2)
+    )
+    smoothed = (block_width * pw_block * gauss).sum(axis=1)
+    # When sigma == 0 the Gaussian is undefined; original behaviour returns 0.
+    smoothed = np.where(sigma == 0.0, 0.0, smoothed)
+
+    return pd.DataFrame({"wind_speed": ws_full, "value": smoothed})
 
 
 def wake_losses_to_power_curve(

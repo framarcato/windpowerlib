@@ -273,6 +273,42 @@ def power_curve_density_correction(
     return power_output
 
 
+def power_curve_batch(wind_speeds, power_curve_wind_speeds, power_curve_values):
+    r"""Vectorised power-curve evaluation over a batch of farms or sites.
+
+    Use this when you have N farms (or N sites) sharing one power curve and
+    want a single ``np.interp`` over all timesteps at once instead of N
+    independent ModelChain calls.
+
+    Parameters
+    ----------
+    wind_speeds : numpy.ndarray
+        Wind speeds at hub height in m/s. Shape ``(N, T)`` where N is the
+        number of farms/sites and T the number of timesteps. A 1-D array of
+        shape ``(T,)`` is also accepted and returns a 1-D output.
+    power_curve_wind_speeds : numpy.ndarray
+        Wind speeds in m/s for the shared power curve. Shape ``(S,)``.
+    power_curve_values : numpy.ndarray
+        Power values in W for the shared power curve. Shape ``(S,)``.
+
+    Returns
+    -------
+    numpy.ndarray
+        Power output in W with the same shape as ``wind_speeds``.
+
+    Notes
+    -----
+    Power output is zero outside the curve's wind speed range. For
+    per-site density correction or per-site power curves use the
+    standard :class:`~.modelchain.ModelChain` path.
+    """
+    ws = np.asarray(wind_speeds, dtype=float)
+    pcs = np.asarray(power_curve_wind_speeds, dtype=float)
+    pcv = np.asarray(power_curve_values, dtype=float)
+    flat = np.interp(ws.ravel(), pcs, pcv, left=0.0, right=0.0)
+    return flat.reshape(ws.shape)
+
+
 def _get_power_output(
     wind_speed, power_curve_wind_speeds, density, power_curve_values
 ):
@@ -297,22 +333,33 @@ def _get_power_output(
         Electrical power output of the wind turbine in W.
 
     """
-    # Calculate the power curves for each timestep using vectors
-    # NOTE: power_curves_per_ts.shape = [len(wind_speed), len(density)]
+    # Density-corrected wind speed for each (timestep, power-curve speed).
+    # power_curves_per_ts[i, j] is the site wind speed corresponding to the
+    # standard power-curve speed power_curve_wind_speeds[j] under density[i].
+    p_exp = np.interp(
+        power_curve_wind_speeds, [7.5, 12.5], [1 / 3, 2 / 3]
+    )  # (S,)
     power_curves_per_ts = (
-        (1.225 / density).reshape(-1, 1)
-        ** np.interp(power_curve_wind_speeds, [7.5, 12.5], [1 / 3, 2 / 3])
-    ) * power_curve_wind_speeds
+        (1.225 / density).reshape(-1, 1) ** p_exp
+    ) * power_curve_wind_speeds  # (T, S)
 
-    # Create the interpolation function
-    def interp_func(w_speed, p_curves):
-        return np.interp(
-            w_speed, p_curves, power_curve_values, left=0, right=0
-        )
+    # Each row of power_curves_per_ts is monotonically non-decreasing (base
+    # speeds are sorted; the density factor rescales them per row), so we can
+    # do a vectorised linear interpolation by searchsorted along axis=1.
+    T, S = power_curves_per_ts.shape
+    ws = np.asarray(wind_speed, dtype=float)
 
-    # Calculate the power output by mapping the arrays to the interp function
-    power_output = np.array(
-        list(map(interp_func, wind_speed, power_curves_per_ts))
-    )
+    # Number of grid points <= ws per row → idx in [0, S].
+    idx = (power_curves_per_ts <= ws[:, None]).sum(axis=1)
+    in_range = (idx > 0) & (idx < S)
+    idx_clip = np.clip(idx, 1, S - 1)
+    rows = np.arange(T)
+    x0 = power_curves_per_ts[rows, idx_clip - 1]
+    x1 = power_curves_per_ts[rows, idx_clip]
+    y0 = power_curve_values[idx_clip - 1]
+    y1 = power_curve_values[idx_clip]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        t = np.where(x1 != x0, (ws - x0) / (x1 - x0), 0.0)
+    power_output = np.where(in_range, y0 + t * (y1 - y0), 0.0)
 
     return power_output
