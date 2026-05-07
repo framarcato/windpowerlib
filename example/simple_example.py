@@ -10,6 +10,7 @@ of wind turbines, are imported and used without further explanations.
 SPDX-FileCopyrightText: 2019 oemof developer group <contact@oemof.org>
 SPDX-License-Identifier: MIT
 """
+
 import pandas as pd
 import requests
 import os
@@ -116,24 +117,28 @@ def run_example():
                 v90.to_group(number_turbines=6),
                 e126.to_group(total_capacity=12.6e6),
             ],
-            "efficiency": 0.5
+            "efficiency": 0.5,
         }
     )
 
-    example_cluster = WindTurbineCluster(**{
-        "name": "Offshore_cluster",
-        "wind_farms": [example_farm, example_farm],
-    })
+    example_cluster = WindTurbineCluster(
+        **{
+            "name": "Offshore_cluster",
+            "wind_farms": [example_farm, example_farm],
+        }
+    )
 
     # ModelChain with wind farm
     mc_farm = TurbineClusterModelChain(
-        example_farm, wake_losses_model=None,
+        example_farm,
+        wake_losses_model=None,
     ).run_model(weather)
     flh_farm = mc_farm.power_output.sum() / example_farm.nominal_power
 
     # ModelChain with wind cluster
     mc_cluster = TurbineClusterModelChain(
-        example_cluster, wake_losses_model=None,
+        example_cluster,
+        wake_losses_model=None,
     ).run_model(weather)
     flh_cluster = mc_cluster.power_output.sum() / example_cluster.nominal_power
 

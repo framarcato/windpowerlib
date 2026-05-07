@@ -5,6 +5,7 @@ windpowerlib.
 SPDX-FileCopyrightText: 2019 oemof developer group <contact@oemof.org>
 SPDX-License-Identifier: MIT
 """
+
 import numpy as np
 
 
@@ -189,9 +190,7 @@ def gauss_distribution(function_variable, standard_deviation, mean=0):
     return (
         1
         / (standard_deviation * np.sqrt(2 * np.pi))
-        * np.exp(
-            -((function_variable - mean) ** 2) / (2 * standard_deviation ** 2)
-        )
+        * np.exp(-((function_variable - mean) ** 2) / (2 * standard_deviation**2))
     )
 
 

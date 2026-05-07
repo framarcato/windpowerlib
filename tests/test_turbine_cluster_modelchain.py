@@ -323,10 +323,7 @@ class TestTurbineClusterModelChain:
             "nominal_power": 3e6,
             "hub_height": 105,
             "power_curve": {
-                "value": [
-                    p * 1000
-                    for p in [0.0, 26.0, 180.0, 1500.0, 3000.0, 3000.0]
-                ],
+                "value": [p * 1000 for p in [0.0, 26.0, 180.0, 1500.0, 3000.0, 3000.0]],
                 "wind_speed": [0.0, 3.0, 5.0, 10.0, 15.0, 25.0],
             },
         }
@@ -372,9 +369,7 @@ class TestTurbineClusterModelChain:
         )
 
         # Heights in the original DataFrame are of type np.int64
-        assert isinstance(
-            self.weather_df.columns.get_level_values(1)[0], np.int_
-        )
+        assert isinstance(self.weather_df.columns.get_level_values(1)[0], np.int_)
         assert isinstance(string_weather.columns.get_level_values(1)[0], str)
 
         test_mc = tc_mc.TurbineClusterModelChain(

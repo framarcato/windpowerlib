@@ -6,9 +6,9 @@ curve of a wind turbine, wind farm or wind turbine cluster.
 SPDX-FileCopyrightText: 2019 oemof developer group <contact@oemof.org>
 SPDX-License-Identifier: MIT
 """
+
 import numpy as np
 import pandas as pd
-from windpowerlib import tools
 
 
 def smooth_power_curve(
@@ -133,7 +133,7 @@ def smooth_power_curve(
         raise ValueError(
             "{} is no valid `standard_deviation_method`. Valid "
             + "options are 'turbulence_intensity', or "
-            + "'Staffell_Pfenninger'".format(standard_deviation_method)
+            + "'Staffell_Pfenninger'"
         )
 
     # Convert inputs to ndarray once (accept Series, list, or ndarray).
@@ -178,11 +178,8 @@ def smooth_power_curve(
 
     # gauss_distribution(power_curve_ws - ws_block, sigma, mean_gauss)
     # = exp(-(block + mean_gauss)^2 / (2 sigma^2)) / (sigma * sqrt(2 pi))
-    gauss = (
-        1.0 / (sigma_safe[:, None] * np.sqrt(2.0 * np.pi))
-    ) * np.exp(
-        -((block[None, :] + mean_gauss) ** 2)
-        / (2.0 * sigma_safe[:, None] ** 2)
+    gauss = (1.0 / (sigma_safe[:, None] * np.sqrt(2.0 * np.pi))) * np.exp(
+        -((block[None, :] + mean_gauss) ** 2) / (2.0 * sigma_safe[:, None] ** 2)
     )
     smoothed = (block_width * pw_block * gauss).sum(axis=1)
     # When sigma == 0 the Gaussian is undefined; original behaviour returns 0.
@@ -240,9 +237,7 @@ def wake_losses_to_power_curve(
         )
         # Add column with reduced power (nan values of efficiency are
         # interpolated)
-        df["reduced_power"] = df["value"] * df["efficiency"].interpolate(
-            method="index"
-        )
+        df["reduced_power"] = df["value"] * df["efficiency"].interpolate(method="index")
         reduced_power = df["reduced_power"].dropna()
         power_curve_df = pd.DataFrame(
             [reduced_power.index, reduced_power.values]

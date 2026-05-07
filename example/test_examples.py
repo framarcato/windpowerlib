@@ -17,9 +17,7 @@ class TestExamples:
         my_turbine, e126, dummy_turbine = mc_e.initialize_wind_turbines()
         mc_e.calculate_power_output(weather, my_turbine, e126, dummy_turbine)
 
-        assert_allclose(
-            2730.142, (e126.power_output.sum() / e126.nominal_power), 0.01
-        )
+        assert_allclose(2730.142, (e126.power_output.sum() / e126.nominal_power), 0.01)
         assert_allclose(
             1882.7567,
             (my_turbine.power_output.sum() / my_turbine.nominal_power),
@@ -30,9 +28,7 @@ class TestExamples:
         # tests full load hours
         weather = mc_e.get_weather_data("weather.csv")
         my_turbine, e126, dummy_turbine = mc_e.initialize_wind_turbines()
-        example_farm, example_farm_2 = tc_mc_e.initialize_wind_farms(
-            my_turbine, e126
-        )
+        example_farm, example_farm_2 = tc_mc_e.initialize_wind_farms(my_turbine, e126)
         example_cluster = tc_mc_e.initialize_wind_turbine_cluster(
             example_farm, example_farm_2
         )
@@ -44,10 +40,7 @@ class TestExamples:
         )
         assert_allclose(
             2156.794154,
-            (
-                example_cluster.power_output.sum()
-                / example_cluster.nominal_power
-            ),
+            (example_cluster.power_output.sum() / example_cluster.nominal_power),
             0.01,
         )
 
@@ -66,9 +59,7 @@ class TestExamples:
 
     def test_modelchain_example_ipynb(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        errors = self._notebook_run(
-            os.path.join(dir_path, "modelchain_example.ipynb")
-        )
+        errors = self._notebook_run(os.path.join(dir_path, "modelchain_example.ipynb"))
         assert errors is None
 
     def test_turbine_cluster_modelchain_example_ipynb(self):

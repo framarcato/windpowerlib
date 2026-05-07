@@ -82,9 +82,7 @@ class TestWindFarm:
         """test catching error when WindTurbine in wind_turbine_fleet
         not initialized"""
         test_farm = {
-            "wind_turbine_fleet": [
-                {"wind_turbine": None, "number_of_turbines": 3}
-            ]
+            "wind_turbine_fleet": [{"wind_turbine": None, "number_of_turbines": 3}]
         }
         msg = "Wind turbine must be provided as WindTurbine object"
         with pytest.raises(ValueError, match=msg):
@@ -167,9 +165,7 @@ class TestWindFarm:
         wt = WindTurbine(**self.test_turbine)
         wt.nominal_power = None
         test_farm = {
-            "wind_turbine_fleet": [
-                {"wind_turbine": wt, "number_of_turbines": 3}
-            ]
+            "wind_turbine_fleet": [{"wind_turbine": wt, "number_of_turbines": 3}]
         }
         msg = "Total capacity of turbines of type"
         with pytest.raises(ValueError, match=msg):
@@ -190,9 +186,7 @@ class TestWindFarm:
             ]
         }
         windfarm = WindFarm(**test_farm)
-        assert 97.265 == pytest.approx(
-            windfarm.mean_hub_height().hub_height, 1e-3
-        )
+        assert 97.265 == pytest.approx(windfarm.mean_hub_height().hub_height, 1e-3)
 
     def test_repr(self):
         """Test string representation of WindFarm"""

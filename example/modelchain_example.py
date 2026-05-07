@@ -20,6 +20,7 @@ Go down to the "run_example()" function to start the example.
 SPDX-FileCopyrightText: 2019 oemof developer group <contact@oemof.org>
 SPDX-License-Identifier: MIT
 """
+
 import os
 import pandas as pd
 import requests
@@ -135,8 +136,7 @@ def initialize_wind_turbines():
         "power_curve": pd.DataFrame(
             data={
                 "value": [
-                    p * 1000
-                    for p in [0.0, 26.0, 180.0, 1500.0, 3000.0, 3000.0]
+                    p * 1000 for p in [0.0, 26.0, 180.0, 1500.0, 3000.0, 3000.0]
                 ],  # in W
                 "wind_speed": [0.0, 3.0, 5.0, 10.0, 15.0, 25.0],
             }
@@ -154,17 +154,13 @@ def initialize_wind_turbines():
     # >>> my_power = my_data["my_power"]
     # >>> my_wind_speed = my_data["my_wind_speed"]
 
-    my_power = pd.Series(
-        [0.0, 39000.0, 270000.0, 2250000.0, 4500000.0, 4500000.0]
-    )
+    my_power = pd.Series([0.0, 39000.0, 270000.0, 2250000.0, 4500000.0, 4500000.0])
     my_wind_speed = (0.0, 3.0, 5.0, 10.0, 15.0, 25.0)
 
     my_turbine2 = {
         "nominal_power": 6e6,  # in W
         "hub_height": 115,  # in m
-        "power_curve": create_power_curve(
-            wind_speed=my_wind_speed, power=my_power
-        ),
+        "power_curve": create_power_curve(wind_speed=my_wind_speed, power=my_power),
     }
     my_turbine2 = WindTurbine(**my_turbine2)
 
@@ -227,9 +223,9 @@ def calculate_power_output(weather, my_turbine, e126, my_turbine2):
 
     # ************************************************************************
     # **** ModelChain with non-default value for "wind_speed_model" **********
-    mc_example_turbine = ModelChain(
-        my_turbine2, wind_speed_model="hellman"
-    ).run_model(weather)
+    mc_example_turbine = ModelChain(my_turbine2, wind_speed_model="hellman").run_model(
+        weather
+    )
     my_turbine2.power_output = mc_example_turbine.power_output
 
     return

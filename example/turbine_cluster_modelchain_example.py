@@ -10,6 +10,7 @@ of wind turbines, are imported and used without further explanations.
 SPDX-FileCopyrightText: 2019 oemof developer group <contact@oemof.org>
 SPDX-License-Identifier: MIT
 """
+
 import pandas as pd
 
 try:
@@ -24,7 +25,6 @@ from windpowerlib import TurbineClusterModelChain
 
 # You can use the logging package to get logging messages from the windpowerlib
 # Change the logging level if you want more or less messages
-import logging
 
 # logging.getLogger().setLevel(logging.DEBUG)
 
@@ -67,9 +67,7 @@ def initialize_wind_farms(my_turbine, e126):
         }
     )
     # initialize WindFarm object
-    example_farm = WindFarm(
-        name="example_farm", wind_turbine_fleet=wind_turbine_fleet
-    )
+    example_farm = WindFarm(name="example_farm", wind_turbine_fleet=wind_turbine_fleet)
 
     # specification of wind farm data (2) containing a wind farm efficiency
     # wind turbine fleet is provided using the to_group function
@@ -145,7 +143,9 @@ def calculate_power_output(weather, example_farm, example_cluster):
     # power output calculation for example_farm
     # initialize TurbineClusterModelChain with default parameters and use
     # run_model method to calculate power output
-    mc_example_farm = TurbineClusterModelChain(example_farm, wake_losses_model="wind_farm_efficiency").run_model(weather)
+    mc_example_farm = TurbineClusterModelChain(
+        example_farm, wake_losses_model="wind_farm_efficiency"
+    ).run_model(weather)
     # write power output time series to WindFarm object
     example_farm.power_output = mc_example_farm.power_output
 
@@ -221,9 +221,7 @@ def run_example():
     weather = mc_e.get_weather_data("weather.csv")
     my_turbine, e126, my_turbine2 = mc_e.initialize_wind_turbines()
     example_farm, example_farm_2 = initialize_wind_farms(my_turbine, e126)
-    example_cluster = initialize_wind_turbine_cluster(
-        example_farm, example_farm_2
-    )
+    example_cluster = initialize_wind_turbine_cluster(example_farm, example_farm_2)
     calculate_power_output(weather, example_farm, example_cluster)
     plot_or_print(example_farm, example_cluster)
 

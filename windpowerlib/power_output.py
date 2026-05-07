@@ -5,6 +5,7 @@ of a wind turbine.
 SPDX-FileCopyrightText: 2019 oemof developer group <contact@oemof.org>
 SPDX-License-Identifier: MIT
 """
+
 import numpy as np
 import pandas as pd
 
@@ -78,7 +79,7 @@ def power_coefficient_curve(
         1
         / 8
         * density
-        * rotor_diameter ** 2
+        * rotor_diameter**2
         * np.pi
         * np.power(wind_speed, 3)
         * power_coefficient_time_series
@@ -309,9 +310,7 @@ def power_curve_batch(wind_speeds, power_curve_wind_speeds, power_curve_values):
     return flat.reshape(ws.shape)
 
 
-def _get_power_output(
-    wind_speed, power_curve_wind_speeds, density, power_curve_values
-):
+def _get_power_output(wind_speed, power_curve_wind_speeds, density, power_curve_values):
     """Get the power output at each timestep using only numpy to speed up performance
 
     Parameters
@@ -336,9 +335,7 @@ def _get_power_output(
     # Density-corrected wind speed for each (timestep, power-curve speed).
     # power_curves_per_ts[i, j] is the site wind speed corresponding to the
     # standard power-curve speed power_curve_wind_speeds[j] under density[i].
-    p_exp = np.interp(
-        power_curve_wind_speeds, [7.5, 12.5], [1 / 3, 2 / 3]
-    )  # (S,)
+    p_exp = np.interp(power_curve_wind_speeds, [7.5, 12.5], [1 / 3, 2 / 3])  # (S,)
     power_curves_per_ts = (
         (1.225 / density).reshape(-1, 1) ** p_exp
     ) * power_curve_wind_speeds  # (T, S)

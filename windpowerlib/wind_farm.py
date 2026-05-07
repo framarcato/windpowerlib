@@ -6,6 +6,7 @@ wind farm.
 SPDX-FileCopyrightText: 2019 oemof developer group <contact@oemof.org>
 SPDX-License-Identifier: MIT
 """
+
 from windpowerlib import tools, power_curves, WindTurbine
 import numpy as np
 import pandas as pd
@@ -156,8 +157,7 @@ class WindFarm(object):
                     )
         except KeyError:
             raise KeyError(
-                "Missing wind_turbine key/column in "
-                "wind_turbine_fleet parameter."
+                "Missing wind_turbine key/column in wind_turbine_fleet parameter."
             )
 
         # add columns for number of turbines and total capacity if they don't
@@ -185,9 +185,9 @@ class WindFarm(object):
                 if np.isnan(number_of_turbines):
                     raise ValueError(msg.format(row["wind_turbine"]))
                 else:
-                    self.wind_turbine_fleet.loc[
-                        ix, "number_of_turbines"
-                    ] = number_of_turbines
+                    self.wind_turbine_fleet.loc[ix, "number_of_turbines"] = (
+                        number_of_turbines
+                    )
             except TypeError:
                 raise ValueError(msg.format(row["wind_turbine"]))
 
@@ -197,16 +197,13 @@ class WindFarm(object):
             if np.isnan(row["total_capacity"]):
                 try:
                     self.wind_turbine_fleet.loc[ix, "total_capacity"] = (
-                        row["number_of_turbines"]
-                        * row["wind_turbine"].nominal_power
+                        row["number_of_turbines"] * row["wind_turbine"].nominal_power
                     )
                 except TypeError:
                     raise ValueError(
                         "Total capacity of turbines of type {turbine} cannot "
                         "be deduced. Please check if the nominal power of the "
-                        "wind turbine is set.".format(
-                            turbine=row["wind_turbine"]
-                        )
+                        "wind turbine is set.".format(turbine=row["wind_turbine"])
                     )
             else:
                 if (
@@ -220,8 +217,7 @@ class WindFarm(object):
                     < 1
                 ):
                     self.wind_turbine_fleet.loc[ix, "total_capacity"] = (
-                        row["number_of_turbines"]
-                        * row["wind_turbine"].nominal_power
+                        row["number_of_turbines"] * row["wind_turbine"].nominal_power
                     )
                     msg = (
                         "The provided total capacity of WindTurbine {0} has "
@@ -386,10 +382,7 @@ class WindFarm(object):
             kwargs.get("roughness_length"),
             id(self.efficiency),
         )
-        if (
-            self.power_curve is not None
-            and self._power_curve_cache_key == cache_key
-        ):
+        if self.power_curve is not None and self._power_curve_cache_key == cache_key:
             return self
 
         # Collect per-turbine (wind_speed, scaled_value) arrays, then merge on
@@ -409,11 +402,9 @@ class WindFarm(object):
                         and kwargs["roughness_length"] is not None
                     ):
                         # Calculate turbulence intensity and write to kwargs
-                        turbulence_intensity = (
-                            tools.estimate_turbulence_intensity(
-                                row["wind_turbine"].hub_height,
-                                kwargs["roughness_length"],
-                            )
+                        turbulence_intensity = tools.estimate_turbulence_intensity(
+                            row["wind_turbine"].hub_height,
+                            kwargs["roughness_length"],
                         )
                         kwargs["turbulence_intensity"] = turbulence_intensity
                     else:
@@ -453,9 +444,7 @@ class WindFarm(object):
         # Aggregate: build a unified, sorted wind-speed grid as the union of
         # all per-turbine grids, then interpolate each curve onto it and sum.
         # Linear in total points, no quadratic pd.concat.
-        union_ws = np.unique(
-            np.concatenate([ws for ws, _ in per_turbine_curves])
-        )
+        union_ws = np.unique(np.concatenate([ws for ws, _ in per_turbine_curves]))
         agg_values = np.zeros_like(union_ws)
         for ws, vals in per_turbine_curves:
             agg_values += np.interp(union_ws, ws, vals, left=0.0, right=0.0)
@@ -474,12 +463,10 @@ class WindFarm(object):
             )
         if wake_losses_model == "wind_farm_efficiency":
             if self.efficiency is not None:
-                wind_farm_power_curve = (
-                    power_curves.wake_losses_to_power_curve(
-                        wind_farm_power_curve["wind_speed"].values,
-                        wind_farm_power_curve["value"].values,
-                        wind_farm_efficiency=self.efficiency,
-                    )
+                wind_farm_power_curve = power_curves.wake_losses_to_power_curve(
+                    wind_farm_power_curve["wind_speed"].values,
+                    wind_farm_power_curve["value"].values,
+                    wind_farm_efficiency=self.efficiency,
                 )
             else:
                 msg = (
@@ -488,9 +475,7 @@ class WindFarm(object):
                     "Failing farm:\n {farm}"
                 )
                 raise ValueError(
-                    msg.format(
-                        model=wake_losses_model, farm=self, eff=self.efficiency
-                    )
+                    msg.format(model=wake_losses_model, farm=self, eff=self.efficiency)
                 )
         self.power_curve = wind_farm_power_curve
         self._power_curve_cache_key = cache_key

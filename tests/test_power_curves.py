@@ -35,9 +35,7 @@ class TestPowerCurves:
 
         # Test turbulence_intensity method
         parameters["turbulence_intensity"] = 0.5
-        wind_speed_values_exp = pd.Series(
-            [6.0, 7.0, 8.0, 9.0, 10.0], name="wind_speed"
-        )
+        wind_speed_values_exp = pd.Series([6.0, 7.0, 8.0, 9.0, 10.0], name="wind_speed")
         power_values_exp = pd.Series(
             [
                 1141906.9806766496,
@@ -98,9 +96,7 @@ class TestPowerCurves:
         # Test constant efficiency
         power_curve_exp = test_curve.copy(deep=True)
         power_curve_exp["value"] = power_curve_exp["value"].values * 0.9
-        assert_frame_equal(
-            wake_losses_to_power_curve(**parameters), power_curve_exp
-        )
+        assert_frame_equal(wake_losses_to_power_curve(**parameters), power_curve_exp)
 
         # Test efficiency curve
         parameters["wind_farm_efficiency"] = pd.DataFrame(
@@ -149,9 +145,7 @@ class TestPowerCurves:
             power_curve_exp["value"].values
             * parameters["wind_farm_efficiency"]["efficiency"]
         )
-        assert_frame_equal(
-            wake_losses_to_power_curve(**parameters), power_curve_exp
-        )
+        assert_frame_equal(wake_losses_to_power_curve(**parameters), power_curve_exp)
 
         # Raise TypeError if wind farm efficiency is of wrong type
         with pytest.raises(TypeError):

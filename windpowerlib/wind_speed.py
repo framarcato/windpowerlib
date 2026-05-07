@@ -5,6 +5,7 @@ hub height of a wind turbine.
 SPDX-FileCopyrightText: 2019 oemof developer group <contact@oemof.org>
 SPDX-License-Identifier: MIT
 """
+
 import numpy as np
 import pandas as pd
 
@@ -84,17 +85,13 @@ def logarithmic_profile(
             + "speed data of a greater height is needed."
         )
     # Return np.array if wind_speed is np.array
-    if isinstance(wind_speed, np.ndarray) and isinstance(
-        roughness_length, pd.Series
-    ):
+    if isinstance(wind_speed, np.ndarray) and isinstance(roughness_length, pd.Series):
         roughness_length = np.array(roughness_length)
 
     return (
         wind_speed
         * np.log((hub_height - 0.7 * obstacle_height) / roughness_length)
-        / np.log(
-            (wind_speed_height - 0.7 * obstacle_height) / roughness_length
-        )
+        / np.log((wind_speed_height - 0.7 * obstacle_height) / roughness_length)
     )
 
 

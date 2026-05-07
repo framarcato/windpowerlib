@@ -4,6 +4,7 @@ Testing the ``modelchain`` module.
 SPDX-FileCopyrightText: 2019 oemof developer group <contact@oemof.org>
 SPDX-License-Identifier: MIT
 """
+
 import pandas as pd
 import numpy as np
 import pytest
@@ -252,9 +253,7 @@ class TestModelChain:
             data=[1366958.544547462, 2823402.837201821],
             name="feedin_power_plant",
         )
-        test_mc = mc.ModelChain(
-            wt.WindTurbine(**test_turbine), **test_modelchain
-        )
+        test_mc = mc.ModelChain(wt.WindTurbine(**test_turbine), **test_modelchain)
         test_mc.run_model(self.weather_df)
         assert_series_equal(test_mc.power_output, power_output_exp)
 
@@ -274,9 +273,7 @@ class TestModelChain:
             "power_output_model": "power_coefficient_curve",
             "density_correction": False,
         }
-        test_mc = mc.ModelChain(
-            wt.WindTurbine(**test_turbine), **test_modelchain
-        )
+        test_mc = mc.ModelChain(wt.WindTurbine(**test_turbine), **test_modelchain)
         test_mc.run_model(self.weather_df)
         assert_series_equal(test_mc.power_output, power_output_exp)
 
@@ -360,9 +357,7 @@ class TestModelChain:
                 "power_output_model": "power_coefficient_curve",
                 "density_correction": True,
             }
-            test_mc = mc.ModelChain(
-                wt.WindTurbine(**test_turbine), **test_modelchain
-            )
+            test_mc = mc.ModelChain(wt.WindTurbine(**test_turbine), **test_modelchain)
             test_mc.run_model(self.weather_df)
 
     @pytest.mark.filterwarnings("ignore:The WindTurbine")
@@ -379,9 +374,7 @@ class TestModelChain:
                 "power_output_model": "power_curve",
                 "density_corr": True,
             }
-            test_mc = mc.ModelChain(
-                wt.WindTurbine(**test_turbine), **test_modelchain
-            )
+            test_mc = mc.ModelChain(wt.WindTurbine(**test_turbine), **test_modelchain)
             test_mc.run_model(self.weather_df)
 
     def test_modelchain_with_power_curve_as_dict(self):
@@ -391,10 +384,7 @@ class TestModelChain:
             "hub_height": 105,
             "rotor_diameter": 70,
             "power_curve": {
-                "value": [
-                    p * 1000
-                    for p in [0.0, 26.0, 180.0, 1500.0, 3000.0, 3000.0]
-                ],
+                "value": [p * 1000 for p in [0.0, 26.0, 180.0, 1500.0, 3000.0, 3000.0]],
                 "wind_speed": [0.0, 3.0, 5.0, 10.0, 15.0, 25.0],
             },
             "power_coefficient_curve": {
@@ -416,10 +406,7 @@ class TestModelChain:
             "hub_height": 105,
             "rotor_diameter": 70,
             "power_curve": {
-                "value": [
-                    p * 1000
-                    for p in [0.0, 26.0, 180.0, 1500.0, 3000.0, 3000.0]
-                ],
+                "value": [p * 1000 for p in [0.0, 26.0, 180.0, 1500.0, 3000.0, 3000.0]],
                 "wind_speed": [0.0, 3.0, 5.0, 10.0, 15.0, 25.0],
             },
             "power_coefficient_curve": {
@@ -455,18 +442,14 @@ class TestModelChain:
         )
 
         # Heights in the original DataFrame are of type np.int64
-        assert isinstance(
-            self.weather_df.columns.get_level_values(1)[0], np.int_
-        )
+        assert isinstance(self.weather_df.columns.get_level_values(1)[0], np.int_)
         assert isinstance(string_weather.columns.get_level_values(1)[0], str)
 
         test_modelchain = {
             "power_output_model": "power_curve",
             "density_corr": True,
         }
-        test_mc = mc.ModelChain(
-            wt.WindTurbine(**test_turbine), **test_modelchain
-        )
+        test_mc = mc.ModelChain(wt.WindTurbine(**test_turbine), **test_modelchain)
         test_mc.run_model(string_weather)
 
     def test_weather_with_nan_values(self, recwarn):
@@ -482,9 +465,7 @@ class TestModelChain:
             "power_output_model": "power_curve",
             "density_corr": True,
         }
-        test_mc = mc.ModelChain(
-            wt.WindTurbine(**test_turbine), **test_modelchain
-        )
+        test_mc = mc.ModelChain(wt.WindTurbine(**test_turbine), **test_modelchain)
         msg = "'temperature', 10"
         with pytest.warns(WindpowerlibUserWarning, match=msg):
             test_mc.run_model(nan_weather)

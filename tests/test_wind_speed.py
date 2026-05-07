@@ -26,9 +26,7 @@ class TestWindSpeed:
         # np.array and float
         v_wind_hub_exp = pd.Series(data=[7.74136523, 10.0637748])
         assert_series_equal(logarithmic_profile(**parameters), v_wind_hub_exp)
-        parameters["roughness_length"] = np.array(
-            parameters["roughness_length"]
-        )
+        parameters["roughness_length"] = np.array(parameters["roughness_length"])
         assert_series_equal(logarithmic_profile(**parameters), v_wind_hub_exp)
         parameters["roughness_length"] = parameters["roughness_length"][0]
         assert_series_equal(logarithmic_profile(**parameters), v_wind_hub_exp)
@@ -47,9 +45,7 @@ class TestWindSpeed:
         )
         assert_allclose(logarithmic_profile(**parameters), v_wind_hub_exp)
         assert isinstance(logarithmic_profile(**parameters), np.ndarray)
-        parameters["roughness_length"] = np.array(
-            parameters["roughness_length"]
-        )
+        parameters["roughness_length"] = np.array(parameters["roughness_length"])
         assert_allclose(logarithmic_profile(**parameters), v_wind_hub_exp)
         assert isinstance(logarithmic_profile(**parameters), np.ndarray)
 
@@ -76,9 +72,7 @@ class TestWindSpeed:
         # np.array and float
         v_wind_hub_exp = pd.Series(data=[7.12462437, 9.26201168])
         assert_series_equal(hellman(**parameters), v_wind_hub_exp)
-        parameters["roughness_length"] = np.array(
-            parameters["roughness_length"]
-        )
+        parameters["roughness_length"] = np.array(parameters["roughness_length"])
         assert_series_equal(hellman(**parameters), v_wind_hub_exp)
         parameters["roughness_length"] = parameters["roughness_length"][0]
         assert_series_equal(hellman(**parameters), v_wind_hub_exp)
@@ -97,9 +91,7 @@ class TestWindSpeed:
         )
         assert_allclose(hellman(**parameters), v_wind_hub_exp)
         assert isinstance(hellman(**parameters), np.ndarray)
-        parameters["roughness_length"] = np.array(
-            parameters["roughness_length"]
-        )
+        parameters["roughness_length"] = np.array(parameters["roughness_length"])
         assert_allclose(hellman(**parameters), v_wind_hub_exp)
         assert isinstance(hellman(**parameters), np.ndarray)
 

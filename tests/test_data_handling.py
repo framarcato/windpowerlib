@@ -111,15 +111,27 @@ class TestDataCheck:
                 "turbine_type": ["turbine 0", "turbine 1", "turbine 2"],
                 "has_power_curve": [True, True, True],
                 "has_cp_curve": [True, True, True],
-                "power_curve_wind_speeds": ["[15, 20, 25]", "[15, 15, 25]", "[15, 20, 25]"],
+                "power_curve_wind_speeds": [
+                    "[15, 20, 25]",
+                    "[15, 15, 25]",
+                    "[15, 20, 25]",
+                ],
                 "power_curve_values": ["[15, 20, 25]", "[15, 20, 25]", "[15, 20, [25]"],
-                "power_coefficient_curve_wind_speeds": ["[15, 20, 25]", "[15, 20, 25]", "[15, 20, 25]"],
-                "power_coefficient_curve_values": ["[15, 20, 25]", "[15, 20, 25]", "[15, 20, 25]"],
+                "power_coefficient_curve_wind_speeds": [
+                    "[15, 20, 25]",
+                    "[15, 20, 25]",
+                    "[15, 20, 25]",
+                ],
+                "power_coefficient_curve_values": [
+                    "[15, 20, 25]",
+                    "[15, 20, 25]",
+                    "[15, 20, 25]",
+                ],
                 "thrust_coefficient_curve_wind_speeds": [0, 1, 2],
                 "thrust_coefficient_curve_values": [0, 1, 2],
                 "nominal_power": [0, 1, 2],
             },
-            index=[0, 1, 2]
+            index=[0, 1, 2],
         )
 
         # run test with low / default threshold - data is not overwritten
@@ -165,9 +177,7 @@ class TestDataCheck:
         schema = "supply"
         table = "wind_turbine_library"
         oep_url = "https://oep.iks.cs.ovgu.de/"
-        url = oep_url + "/api/v0/schema/{}/tables/{}/rows/?".format(
-            schema, table
-        )
+        url = oep_url + "/api/v0/schema/{}/tables/{}/rows/?".format(schema, table)
         with pytest.raises(requests.exceptions.SSLError):
             requests.get(url, verify=True)
 

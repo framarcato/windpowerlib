@@ -79,9 +79,7 @@ def get_turbine_types(turbine_library="local", print_out=True, filter_=True):
 
     """
     if turbine_library == "local":
-        filename = os.path.join(
-            os.path.dirname(__file__), "oedb", "turbine_data.csv"
-        )
+        filename = os.path.join(os.path.dirname(__file__), "oedb", "turbine_data.csv")
         df = pd.read_csv(filename, index_col=0).reset_index()
     elif turbine_library == "oedb":
         df = fetch_turbine_data_from_oedb()
@@ -98,9 +96,9 @@ def get_turbine_types(turbine_library="local", print_out=True, filter_=True):
         p_curves_df = df.loc[df["has_power_curve"].fillna(False)][
             ["manufacturer", "turbine_type", "has_power_curve"]
         ]
-        curves_df = pd.merge(
-            p_curves_df, cp_curves_df, how="outer", sort=True
-        ).fillna(False)
+        curves_df = pd.merge(p_curves_df, cp_curves_df, how="outer", sort=True).fillna(
+            False
+        )
     else:
         curves_df = df[
             ["manufacturer", "turbine_type", "has_power_curve", "has_cp_curve"]
@@ -112,9 +110,7 @@ def get_turbine_types(turbine_library="local", print_out=True, filter_=True):
     return curves_df
 
 
-def fetch_turbine_data_from_oedb(
-    schema="supply", table="wind_turbine_library"
-):
+def fetch_turbine_data_from_oedb(schema="supply", table="wind_turbine_library"):
     r"""
     Fetches turbine library from the OpenEnergy database (oedb).
 
@@ -141,9 +137,7 @@ def fetch_turbine_data_from_oedb(
     if not result.status_code == 200:
         raise ConnectionError(
             "Database (oep) connection not successful. \nURL: {2}\n"
-            "Response: [{0}] \n{1}".format(
-                result.status_code, result.text, url
-            )
+            "Response: [{0}] \n{1}".format(result.status_code, result.text, url)
         )
     return pd.DataFrame(result.json())
 
@@ -195,11 +189,9 @@ def store_turbine_data_from_oedb(
 
     """
     turbine_data = fetch_turbine_data_from_oedb(schema=schema, table=table)
-    turbine_data = _process_and_save_oedb_data(
-        turbine_data, threshold=threshold
-    )
+    turbine_data = _process_and_save_oedb_data(turbine_data, threshold=threshold)
     check_turbine_data(
-        filename = os.path.join(os.path.dirname(__file__), "oedb", "{0}.csv")
+        filename=os.path.join(os.path.dirname(__file__), "oedb", "{0}.csv")
     )
     return turbine_data
 
@@ -241,14 +233,12 @@ def _process_and_save_oedb_data(turbine_data, threshold=0.2):
                         pd.DataFrame(
                             data=[
                                 eval(
-                                    turbine_data[
-                                        "{}_wind_speeds".format(curve_type)
-                                    ][index]
-                                ),
-                                eval(
-                                    turbine_data["{}_values".format(curve_type)][
+                                    turbine_data["{}_wind_speeds".format(curve_type)][
                                         index
                                     ]
+                                ),
+                                eval(
+                                    turbine_data["{}_values".format(curve_type)][index]
                                 ),
                             ]
                         )
@@ -266,8 +256,9 @@ def _process_and_save_oedb_data(turbine_data, threshold=0.2):
                         )
                     else:
                         broken_turbine_data.append(
-                            turbine_data.loc[index, "turbine_type"])
-                except:
+                            turbine_data.loc[index, "turbine_type"]
+                        )
+                except Exception:
                     broken_turbine_data.append(turbine_data.loc[index, "turbine_type"])
         curve_dict[curve_type] = curves_df
         broken_turbines_dict[curve_type] = broken_turbine_data
@@ -275,11 +266,14 @@ def _process_and_save_oedb_data(turbine_data, threshold=0.2):
     # check if there are faulty turbines and if so, raise warning
     # if there are too many, don't save downloaded data to disk but keep existing data
     if any(len(_) > 0 for _ in broken_turbines_dict.values()):
-        issue_link = ("https://github.com/OpenEnergyPlatform/data-preprocessing"
-                      "/issues/28")
+        issue_link = (
+            "https://github.com/OpenEnergyPlatform/data-preprocessing/issues/28"
+        )
         # in case only some data is faulty, only give out warning
-        if all(len(_) < threshold * len(turbine_data)
-               for _ in broken_turbines_dict.values()):
+        if all(
+            len(_) < threshold * len(turbine_data)
+            for _ in broken_turbines_dict.values()
+        ):
             save_turbine_data = True
             for curve_type in curve_types:
                 if len(broken_turbines_dict[curve_type]) > 0:
@@ -293,8 +287,11 @@ def _process_and_save_oedb_data(turbine_data, threshold=0.2):
                 # set has_power_(coefficient)_curve to False for faulty turbines
                 for turb in broken_turbines_dict[curve_type]:
                     ind = turbine_data[turbine_data.turbine_type == turb].index[0]
-                    col = ("has_power_curve" if curve_type == "power_curve"
-                           else "has_cp_curve")
+                    col = (
+                        "has_power_curve"
+                        if curve_type == "power_curve"
+                        else "has_cp_curve"
+                    )
                     turbine_data.at[ind, col] = False
         # in case most data is faulty, do not store downloaded data
         else:
@@ -315,8 +312,9 @@ def _process_and_save_oedb_data(turbine_data, threshold=0.2):
         filename = os.path.join(os.path.dirname(__file__), "oedb", "{0}.csv")
         # save curve data to csv
         for curve_type in curve_types:
-            curves_df = curve_dict[curve_type].set_index(
-                "wind_speed").sort_index().transpose()
+            curves_df = (
+                curve_dict[curve_type].set_index("wind_speed").sort_index().transpose()
+            )
             # power curve values in W
             if curve_type == "power_curve":
                 curves_df *= 1000
@@ -365,14 +363,9 @@ def check_data_integrity(filename, min_pc_length=5):
             wt = WindTurbine(**turbine_data_set)
             if wt.power_curve is None and data_set[1].has_power_curve is True:
                 logging.warning(
-                    "{0}: No power curve but has_power_curve=True.".format(
-                        wt_type
-                    )
+                    "{0}: No power curve but has_power_curve=True.".format(wt_type)
                 )
-            if (
-                wt.power_coefficient_curve is None
-                and data_set[1].has_cp_curve is True
-            ):
+            if wt.power_coefficient_curve is None and data_set[1].has_cp_curve is True:
                 logging.warning(
                     "{0}: No cp-curve but has_cp_curve=True.".format(wt_type)
                 )
@@ -397,9 +390,7 @@ def restore_default_turbine_data():
     >>> restore_default_turbine_data()
 
     """
-    src_path = os.path.join(
-        os.path.dirname(__file__), "data", "default_turbine_data"
-    )
+    src_path = os.path.join(os.path.dirname(__file__), "data", "default_turbine_data")
     dst_path = os.path.join(os.path.dirname(__file__), "oedb")
 
     for file in os.listdir(src_path):

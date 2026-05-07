@@ -6,6 +6,7 @@ wind turbine.
 SPDX-FileCopyrightText: 2019 oemof developer group <contact@oemof.org>
 SPDX-License-Identifier: MIT
 """
+
 import numpy as np
 import pandas as pd
 import logging
@@ -145,9 +146,7 @@ class WindTurbine(object):
             if power_curve is None:
                 try:
                     fn = os.path.join(path, "power_curves.csv")
-                    self.power_curve = get_turbine_data_from_file(
-                        self.turbine_type, fn
-                    )
+                    self.power_curve = get_turbine_data_from_file(self.turbine_type, fn)
                 except KeyError:
                     msg = "No power curve found for {0}"
                     logging.debug(msg.format(self.turbine_type))
@@ -162,15 +161,12 @@ class WindTurbine(object):
                     logging.debug(msg.format(self.turbine_type))
 
             if nominal_power is None or (
-                rotor_diameter is None
-                and self.power_coefficient_curve is not None
+                rotor_diameter is None and self.power_coefficient_curve is not None
             ):
                 turbine_data = None
                 try:
                     fn = os.path.join(path, "turbine_data.csv")
-                    turbine_data = get_turbine_data_from_file(
-                        self.turbine_type, fn
-                    )
+                    turbine_data = get_turbine_data_from_file(self.turbine_type, fn)
                 except KeyError:
                     msg = "No turbine data found for {0}"
                     logging.debug(msg.format(self.turbine_type))
@@ -210,9 +206,7 @@ class WindTurbine(object):
                     "Type of power curve of {} is {} but should be "
                     "pd.DataFrame or dict."
                 )
-                raise TypeError(
-                    msg.format(self.__repr__(), type(self.power_curve))
-                )
+                raise TypeError(msg.format(self.__repr__(), type(self.power_curve)))
             if isinstance(self.power_coefficient_curve, pd.DataFrame):
                 self.power_coefficient_curve.sort_values(by="wind_speed")
             elif self.power_coefficient_curve is not None:
@@ -221,9 +215,7 @@ class WindTurbine(object):
                     "should be pd.DataFrame or dict."
                 )
                 raise TypeError(
-                    msg.format(
-                        self.__repr__(), type(self.power_coefficient_curve)
-                    )
+                    msg.format(self.__repr__(), type(self.power_coefficient_curve))
                 )
 
     def power_curve_arrays(self):
@@ -238,8 +230,9 @@ class WindTurbine(object):
             return None
         if not isinstance(pc, (pd.DataFrame, dict)):
             raise ValueError(
-                "power_curve of {} must be a pandas.DataFrame or dict, "
-                "got {}".format(self, type(pc))
+                "power_curve of {} must be a pandas.DataFrame or dict, got {}".format(
+                    self, type(pc)
+                )
             )
         cache = self._power_curve_arr_cache
         if cache is not None and cache[0] is pc:
@@ -337,9 +330,7 @@ class WindTurbine(object):
         elif number_turbines is None:
             number_turbines = 1
 
-        return WindTurbineGroup(
-            wind_turbine=self, number_of_turbines=number_turbines
-        )
+        return WindTurbineGroup(wind_turbine=self, number_of_turbines=number_turbines)
 
 
 # This is working for Python >= 3.5.
@@ -371,9 +362,7 @@ class WindTurbineGroup(
 WindTurbineGroup.wind_turbine.__doc__ = (
     "A :class:`~windpowerlib.wind_farm.WindTurbine` object."
 )
-WindTurbineGroup.number_of_turbines.__doc__ = (
-    "Number of turbines of type WindTurbine"
-)
+WindTurbineGroup.number_of_turbines.__doc__ = "Number of turbines of type WindTurbine"
 
 
 def get_turbine_data_from_file(turbine_type, path):

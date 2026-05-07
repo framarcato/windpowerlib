@@ -97,17 +97,13 @@ class TestTools:
         )
         # target_height is between heights given in the columns of the
         # DataFrame
-        exp_output = pd.Series(
-            data=[4.61074042165, 6.83222126494, 8.44296168659]
-        )
+        exp_output = pd.Series(data=[4.61074042165, 6.83222126494, 8.44296168659])
         parameters["target_height"] = 140
         assert_series_equal(
             logarithmic_interpolation_extrapolation(df, **parameters),
             exp_output,
         )
-        exp_output = pd.Series(
-            data=[4.11328333429, 5.16992500144, 6.16992500144]
-        )
+        exp_output = pd.Series(data=[4.11328333429, 5.16992500144, 6.16992500144])
         parameters["target_height"] = 90
         assert_series_equal(
             logarithmic_interpolation_extrapolation(df, **parameters),
@@ -115,9 +111,7 @@ class TestTools:
         )
         # target_height is greater than the heights given in the columns of the
         # DataFrame
-        exp_output = pd.Series(
-            data=[5.19897784672, 8.59693354015, 10.7959113869]
-        )
+        exp_output = pd.Series(data=[5.19897784672, 8.59693354015, 10.7959113869])
         parameters["target_height"] = 240
         assert_series_equal(
             logarithmic_interpolation_extrapolation(df, **parameters),
