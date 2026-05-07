@@ -1,3 +1,60 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "windpowerlib"
+version = "0.2.3.dev0"
+description = "Creating time series of wind power plants."
+readme = "README.rst"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "oemof developer group", email = "windpowerlib@rl-institut.de" }]
+keywords = ["wind", "power", "energy", "renewables"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "requests>=2.28",
+]
+
+[project.urls]
+Homepage = "https://github.com/wind-python/windpowerlib"
+Documentation = "https://windpowerlib.readthedocs.io"
+Source = "https://github.com/wind-python/windpowerlib"
+
+[project.optional-dependencies]
+dev = [
+    "jupyter",
+    "matplotlib",
+    "nbsphinx",
+    "pytest",
+    "pytest-notebook",
+    "sphinx>=4",
+    "sphinx_rtd_theme",
+]
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+include = ["windpowerlib*"]
+
+[tool.setuptools.package-data]
+windpowerlib = [
+    "data/*.csv",
+    "data/default_turbine_data/*.csv",
+    "oedb/*.csv",
+]
+
 [tool.black]
 line-length = 79
 target-version = ['py310', 'py311', 'py312']
