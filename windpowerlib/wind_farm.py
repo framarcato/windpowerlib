@@ -121,8 +121,16 @@ class WindFarm(object):
         self.hub_height = None
         self._nominal_power = None
         self.power_curve = None
+        self._power_curve_cache_key = None
 
         self.check_and_complete_wind_turbine_fleet()
+
+    def _fleet_signature(self):
+        """Hashable fingerprint of the current fleet for cache invalidation."""
+        return tuple(
+            (id(row["wind_turbine"]), float(row["number_of_turbines"]))
+            for _, row in self.wind_turbine_fleet.iterrows()
+        )
 
     def check_and_complete_wind_turbine_fleet(self):
         """
@@ -365,8 +373,30 @@ class WindFarm(object):
                     + "each wind turbine needs a power curve "
                     + "but `power_curve` of '{}' is None.".format(turbine)
                 )
-        # Initialize data frame for power curve values
-        df = pd.DataFrame()
+
+        # Skip recomputation if the fleet and parameters are unchanged.
+        cache_key = (
+            self._fleet_signature(),
+            wake_losses_model,
+            bool(smoothing),
+            float(block_width),
+            standard_deviation_method,
+            smoothing_order,
+            None if turbulence_intensity is None else float(turbulence_intensity),
+            kwargs.get("roughness_length"),
+            id(self.efficiency),
+        )
+        if (
+            self.power_curve is not None
+            and self._power_curve_cache_key == cache_key
+        ):
+            return self
+
+        # Collect per-turbine (wind_speed, scaled_value) arrays, then merge on
+        # a unified, sorted wind-speed grid via numpy interpolation. This
+        # replaces the prior pd.concat-in-loop pattern (quadratic) with a
+        # single linear-time aggregation.
+        per_turbine_curves = []
         for ix, row in self.wind_turbine_fleet.iterrows():
             # Check if needed parameters are available and/or assign them
             if smoothing:
@@ -393,67 +423,45 @@ class WindFarm(object):
                             + "`standard_deviation_method` if "
                             + "`turbulence_intensity` is not given"
                         )
-            # Get original power curve
-            power_curve = pd.DataFrame(row["wind_turbine"].power_curve)
-            # Editions to the power curves before the summation
+            turbine = row["wind_turbine"]
             if smoothing and smoothing_order == "turbine_power_curves":
-                power_curve = power_curves.smooth_power_curve(
-                    power_curve["wind_speed"],
-                    power_curve["value"],
+                pc = pd.DataFrame(turbine.power_curve)
+                pc = power_curves.smooth_power_curve(
+                    pc["wind_speed"],
+                    pc["value"],
                     standard_deviation_method=standard_deviation_method,
                     block_width=block_width,
                     **kwargs,
                 )
+                ws_col = np.asarray(pc["wind_speed"], dtype=float)
+                val_col = np.asarray(pc["value"], dtype=float)
             else:
-                # Add value zero to start and end of curve as otherwise
-                # problems can occur during the aggregation
-                if power_curve.iloc[0]["wind_speed"] != 0.0:
-                    power_curve = pd.concat(
-                        [
-                            pd.DataFrame(
-                                data={"value": [0.0], "wind_speed": [0.0]}
-                            ),
-                            power_curve,
-                        ],
-                        join="inner",
-                    )
-                if power_curve.iloc[-1]["value"] != 0.0:
-                    power_curve = pd.concat(
-                        [
-                            power_curve,
-                            pd.DataFrame(
-                                data={
-                                    "wind_speed": [
-                                        power_curve["wind_speed"].loc[
-                                            power_curve.index[-1]
-                                        ]
-                                        + 0.5
-                                    ],
-                                    "value": [0.0],
-                                }
-                            ),
-                        ],
-                        join="inner",
-                    )
-            # Add power curves of all turbine types to data frame
-            # (multiplied by turbine amount)
-            df = pd.concat(
-                [
-                    df,
-                    pd.DataFrame(
-                        power_curve.set_index(["wind_speed"])
-                        * row["number_of_turbines"]
-                    ),
-                ],
-                axis=1,
-                sort=True,
+                # Use the WindTurbine ndarray cache to avoid a DataFrame
+                # round-trip on every aggregation.
+                ws_col, val_col = turbine.power_curve_arrays()
+                # Pad with explicit zeros at start (ws=0) and just past the
+                # end so curves with different ranges aggregate cleanly.
+                if ws_col[0] != 0.0:
+                    ws_col = np.concatenate([[0.0], ws_col])
+                    val_col = np.concatenate([[0.0], val_col])
+                if val_col[-1] != 0.0:
+                    ws_col = np.concatenate([ws_col, [ws_col[-1] + 0.5]])
+                    val_col = np.concatenate([val_col, [0.0]])
+            per_turbine_curves.append(
+                (ws_col, val_col * float(row["number_of_turbines"]))
             )
-        # Aggregate all power curves
-        wind_farm_power_curve = pd.DataFrame(
-            df.interpolate(method="index").sum(axis=1)
+        # Aggregate: build a unified, sorted wind-speed grid as the union of
+        # all per-turbine grids, then interpolate each curve onto it and sum.
+        # Linear in total points, no quadratic pd.concat.
+        union_ws = np.unique(
+            np.concatenate([ws for ws, _ in per_turbine_curves])
         )
-        wind_farm_power_curve.columns = ["value"]
-        wind_farm_power_curve.reset_index(inplace=True)
+        agg_values = np.zeros_like(union_ws)
+        for ws, vals in per_turbine_curves:
+            agg_values += np.interp(union_ws, ws, vals, left=0.0, right=0.0)
+        wind_farm_power_curve = pd.DataFrame(
+            {"wind_speed": union_ws, "value": agg_values}
+        )
         # Apply power curve smoothing and consideration of wake losses
         # after the summation
         if smoothing and smoothing_order == "wind_farm_power_curves":
@@ -485,4 +493,5 @@ class WindFarm(object):
                     )
                 )
         self.power_curve = wind_farm_power_curve
+        self._power_curve_cache_key = cache_key
         return self

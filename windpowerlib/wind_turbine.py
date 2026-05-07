@@ -6,10 +6,12 @@ wind turbine.
 SPDX-FileCopyrightText: 2019 oemof developer group <contact@oemof.org>
 SPDX-License-Identifier: MIT
 """
+import numpy as np
 import pandas as pd
 import logging
 import warnings
 import os
+from functools import lru_cache
 from windpowerlib.tools import WindpowerlibUserWarning
 from typing import NamedTuple
 
@@ -131,6 +133,10 @@ class WindTurbine(object):
         self.nominal_power = nominal_power
         self.power_curve = power_curve
         self.power_coefficient_curve = power_coefficient_curve
+        # Lazily-built ndarray cache for the power curve, used on hot paths
+        # to avoid pd.DataFrame round-trips. Keyed on id(self.power_curve)
+        # so manual reassignment invalidates the cache automatically.
+        self._power_curve_arr_cache = None
 
         if path == "oedb":
             path = os.path.join(os.path.dirname(__file__), "oedb")
@@ -219,6 +225,29 @@ class WindTurbine(object):
                         self.__repr__(), type(self.power_coefficient_curve)
                     )
                 )
+
+    def power_curve_arrays(self):
+        """Return the power curve as ``(wind_speed, value)`` ndarray pair.
+
+        Cached so repeated calls on hot paths avoid the
+        ``pd.DataFrame`` -> ndarray round-trip on every model evaluation.
+        Cache invalidates automatically if ``self.power_curve`` is reassigned.
+        """
+        pc = self.power_curve
+        if pc is None:
+            return None
+        if not isinstance(pc, (pd.DataFrame, dict)):
+            raise ValueError(
+                "power_curve of {} must be a pandas.DataFrame or dict, "
+                "got {}".format(self, type(pc))
+            )
+        cache = self._power_curve_arr_cache
+        if cache is not None and cache[0] is pc:
+            return cache[1], cache[2]
+        ws = np.asarray(pc["wind_speed"], dtype=float)
+        val = np.asarray(pc["value"], dtype=float)
+        self._power_curve_arr_cache = (pc, ws, val)
+        return ws, val
 
     def __repr__(self):
         info = []
@@ -386,10 +415,7 @@ def get_turbine_data_from_file(turbine_type, path):
     1500000.0
     """
 
-    try:
-        df = pd.read_csv(path, index_col=0)
-    except FileNotFoundError:
-        raise FileNotFoundError("The file '{}' was not found.".format(path))
+    df = _read_turbine_csv(path)
     wpp_df = df[df.index == turbine_type].copy()
     # if turbine not in data file
     if wpp_df.shape[0] == 0:
@@ -406,6 +432,26 @@ def get_turbine_data_from_file(turbine_type, path):
         # transform wind speeds to floats
         wpp_df["wind_speed"] = wpp_df["wind_speed"].apply(lambda x: float(x))
         return wpp_df
+
+
+def _read_turbine_csv(path):
+    """Read a turbine database CSV with mtime-aware caching.
+
+    The OEDB CSV files shipped with the library are read repeatedly when
+    instantiating many WindTurbines by name; caching collapses thousands of
+    reads to one. The cache key includes the file's mtime so on-disk edits
+    are picked up automatically.
+    """
+    try:
+        mtime = os.path.getmtime(path)
+    except FileNotFoundError:
+        raise FileNotFoundError("The file '{}' was not found.".format(path))
+    return _read_turbine_csv_cached(path, mtime)
+
+
+@lru_cache(maxsize=None)
+def _read_turbine_csv_cached(path, _mtime):
+    return pd.read_csv(path, index_col=0)
 
 
 def get_turbine_types(turbine_library="local", print_out=True, filter_=True):

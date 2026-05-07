@@ -8,6 +8,12 @@ SPDX-License-Identifier: MIT
 import numpy as np
 import pandas as pd
 import os
+from functools import lru_cache
+
+
+@lru_cache(maxsize=None)
+def _read_efficiency_csv(path):
+    return pd.read_csv(path)
 
 
 def reduce_wind_speed(wind_speed, wind_efficiency_curve_name="dena_mean"):
@@ -140,8 +146,8 @@ def get_wind_efficiency_curve(curve_name="all"):
             "data",
             "wind_efficiency_curves_{}.csv".format(curve_name.split("_")[0]),
         )
-        # Read wind efficiency curves from file
-        wind_efficiency_curves = pd.read_csv(path)
+        # Read wind efficiency curves from file (cached)
+        wind_efficiency_curves = _read_efficiency_csv(path)
         # Raise error if wind efficiency curve specified in 'curve_name' does
         # not exist
         if curve_name not in list(wind_efficiency_curves):
