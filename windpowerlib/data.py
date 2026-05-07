@@ -90,14 +90,20 @@ def get_turbine_types(turbine_library="local", print_out=True, filter_=True):
             + "but must be 'local' or 'oedb'."
         )
     if filter_:
-        cp_curves_df = df.loc[df["has_cp_curve"].fillna(False)][
-            ["manufacturer", "turbine_type", "has_cp_curve"]
-        ]
-        p_curves_df = df.loc[df["has_power_curve"].fillna(False)][
+        # Cast to boolean dtype first so .fillna(False) does not trigger the
+        # pandas 2.x object-dtype downcasting FutureWarning (#143).
+        has_cp = df["has_cp_curve"].astype("boolean").fillna(False)
+        has_pc = df["has_power_curve"].astype("boolean").fillna(False)
+        cp_curves_df = df.loc[has_cp][["manufacturer", "turbine_type", "has_cp_curve"]]
+        p_curves_df = df.loc[has_pc][
             ["manufacturer", "turbine_type", "has_power_curve"]
         ]
-        curves_df = pd.merge(p_curves_df, cp_curves_df, how="outer", sort=True).fillna(
-            False
+        curves_df = pd.merge(p_curves_df, cp_curves_df, how="outer", sort=True)
+        curves_df["has_power_curve"] = (
+            curves_df["has_power_curve"].astype("boolean").fillna(False)
+        )
+        curves_df["has_cp_curve"] = (
+            curves_df["has_cp_curve"].astype("boolean").fillna(False)
         )
     else:
         curves_df = df[
